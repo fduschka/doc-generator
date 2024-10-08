@@ -1,5 +1,5 @@
 import { insertTextSiblingAfter, getNextSibling } from './reportUtils';
-import { Node } from './types';
+import { BUILT_IN_COMMANDS, Node } from './types';
 
 // In-place
 // In case of split commands (or even split delimiters), joins all the pieces
@@ -93,7 +93,12 @@ const extractVariables = (template: Node, delimiter: [string, string]) => {
       if (!fFound) node = null;
     }
   }
-  return variables;
+  return variables.filter((v) => {
+    BUILT_IN_COMMANDS.forEach((cmd) => {
+      if (v.startsWith(cmd)) return false;
+    })
+    return true;
+  });
 };
 
 // ==========================================

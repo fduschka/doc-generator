@@ -4,23 +4,14 @@ import { Node } from './types';
 // In-place
 // In case of split commands (or even split delimiters), joins all the pieces
 // at the starting node
-const preprocessTemplate = (template: Node, delimiter: [string, string]) => {
+const extractVariables = (template: Node, delimiter: [string, string]) => {
   let node: Node | null = template;
   let fCmd = false;
   let openNode = null;
   let idxDelimiter = 0;
-  const placeholderCmd = `${delimiter[0]}CMD_NODE${delimiter[1]}`;
+  let variables = [];
 
   while (node != null) {
-    // Add `xml:space` attr `preserve` to `w:t` tags
-    if (!node._fTextNode && node._tag === 'w:t') {
-      node._attrs['xml:space'] = 'preserve';
-    }
-
-    // Add a space if we reach a new `w:p` tag and there's an open node (hence, in a command)
-    if (!node._fTextNode && node._tag === 'w:p' && openNode) {
-      openNode._text += ' ';
-    }
 
     // Process text nodes inside `w:t` tags
     if (
@@ -46,7 +37,14 @@ const preprocessTemplate = (template: Node, delimiter: [string, string]) => {
           // add a new `w:t` + text node (either before or after the delimiter),
           // depending on the case
           if (idxDelimiter === currentDelimiter.length) {
+            if (fCmd) {
+              const variable = openNode._text.substring(currentDelimiter.length, openNode._text.length)
+
+              variables.push(variable);
+            }
+            
             fCmd = !fCmd;
+
             const fNodesMatch = node === openNode;
             if (fCmd && openNode._text.length) {
               openNode = insertTextSiblingAfter(openNode);
@@ -59,6 +57,7 @@ const preprocessTemplate = (template: Node, delimiter: [string, string]) => {
             }
             idxDelimiter = 0;
             if (!fCmd) openNode = node; // may switch open node to the current one
+
           }
 
           // Doesn't match the delimiter, but we had some partial match
@@ -75,13 +74,9 @@ const preprocessTemplate = (template: Node, delimiter: [string, string]) => {
       }
       // Close the text node if nothing's pending
       if (!fCmd && !idxDelimiter) openNode = null;
-
-      // If text was present but not any more, add a placeholder, so that this node
-      // will be purged during report generation
-      if (textIn.length && !node._text.length) node._text = placeholderCmd;
     }
 
-    // Find next node to process
+    // // Find next node to process
     if (node._children.length) node = node._children[0];
     else {
       let fFound = false;
@@ -98,10 +93,11 @@ const preprocessTemplate = (template: Node, delimiter: [string, string]) => {
       if (!fFound) node = null;
     }
   }
-  return template;
+  return variables;
 };
 
 // ==========================================
 // Public API
 // ==========================================
-export default preprocessTemplate;
+export default extractVariables;
+

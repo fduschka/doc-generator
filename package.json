@@ -1,10 +1,10 @@
 {
-  "name": "docx-templates",
+  "name": "cp-doc-generator",
   "version": "4.13.0",
   "description": "Template-based docx report creation",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
-  "author": "Guillermo Grau Panea",
+  "author": "coPetence GmbH",
   "license": "MIT",
   "keywords": [
     "docx",

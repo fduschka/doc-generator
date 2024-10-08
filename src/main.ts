@@ -32,6 +32,7 @@ import { addChild, newNonTextNode } from './reportUtils';
 import JSZip from 'jszip';
 import { TemplateParseError } from './errors';
 import { logger } from './debug';
+import extractVariables from './extractVariables';
 
 const DEFAULT_CMD_DELIMITER = '+++' as const;
 const DEFAULT_LITERAL_XML_DELIMITER = '||' as const;
@@ -584,5 +585,24 @@ const getCmdDelimiter = (
   if (typeof delimiter === 'string') return [delimiter, delimiter];
   return delimiter;
 };
+
+
+export async function getVariables(
+  options: UserOptions,
+  _probe?: 'JS' | 'XML'
+): Promise<String[]> {
+  const { template, data, queryVars } = options;
+  const createOptions = {
+    cmdDelimiter: getCmdDelimiter(options.cmdDelimiter),
+  };
+
+  const { jsTemplate, mainDocument, zip, contentTypes } = await parseTemplate(
+    template
+  );
+
+  const variables = extractVariables(jsTemplate, createOptions.cmdDelimiter);
+
+  return variables;
+}
 
 export default createReport;
